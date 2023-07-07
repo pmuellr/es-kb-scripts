@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+label=`node -p "new Date().toISOString().substr(5,14)"`
+
+# ----- connector -----
+
+connReq=`hjson -c << CONN_REQ
+  name:              server log $label
+  connector_type_id: .server-log
+  config:            {}
+  secrets:           {}
+CONN_REQ`
+# echo "connReq:" $connReq
+
+# ----- rule -----
+
+ruleReq=`hjson -c << RULE_REQ
+{
+  name:         metric threshold $label
+  rule_type_id: metrics.alert.threshold
+  consumer:     infrastructure
+  enabled:      true
+  throttle:     null
+  schedule:     { interval: "10s" }
+  actions:      [] # [{ group: "default", id: "$connId", params: { message: "{{context.message}}" } }]
+  params: {
+    criteria: [
+      {
+        metric:     kibana.alert.rule.execution.metrics.rule_type_run_duration_ms
+        comparator: <
+        threshold:  [ 100 ]
+        timeSize:   1
+        timeUnit:   m
+        aggType:    avg
+      }
+    ]
+    sourceId:              default
+    alertOnNoData:         false
+    alertOnGroupDisappear: false
+  }
+}
+RULE_REQ`
+#echo "ruleReq:" $ruleReq
+
+
+# ----- get the version
+versionRes=`curl -s $ES_URL`
+versionLong=`echo $versionRes | jq .version.number`
+echo "versionLong:" $versionLong
+version=`node -p "process.argv[1].split('-')[0]" "$versionLong"`
+echo "version:" $version
+
+# ----- metrics-* alias for event log -----
+aliasRes=`curl -sX POST $ES_URL/.kibana-event-log-*/_alias/metrics-event-log \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d '{ "is_hidden": true }'`
+echo "aliasRes:" $aliasRes
+
+# ----- create -----
+
+connRes=`curl -sX POST $KB_URL/api/actions/connector \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d "$connReq"`
+# echo "connRes:" $connRes
+
+connId=`echo $connRes | jq -r '.id'`
+echo "connId:" $connId
+
+ruleRes=`curl -sX POST $KB_URL/api/alerting/rule \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d "$ruleReq"`
+echo "ruleRes:" $ruleRes
+
+ruleId=`echo $ruleRes | jq -r '.id'`
+echo "ruleId:" $ruleId

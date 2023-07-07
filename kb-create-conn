@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $script_dir/ut-common
+command=$0
+label=`getLabel`
+
+help() {
+  echo "Usage: $command <type> <config> <secrets>" 
+  echo "  - type should be a valid connector type"
+  echo "  - config and secrets should be valid HJSON or JSON values"
+  exit 1
+}
+
+type=$1
+config_hjson=$2
+secrets_hjson=$3
+
+if [ -z "$type" ]; then help; fi
+if [ -z "$config_hjson" ]; then help; fi
+if [ -z "$secrets_hjson" ]; then help; fi
+
+config=`echo $config_hjson | hjson -c`
+if [ $? -ne 0 ]; then errorExit "invalid config"; fi
+
+secrets=`echo $secrets_hjson | hjson -c`
+if [ $? -ne 0 ]; then errorExit "invalid secrets"; fi
+
+body=`hjson -c << END_BODY
+  name:              "$label $type"
+  connector_type_id: "$type"
+  config:            $config
+  secrets:           $secrets
+END_BODY`
+
+connRes=`curl -sfX POST $KB_URL/api/actions/connector \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d "$body"`
+if [ $? -ne 0 ]; then errorExit "error creating connector: $connRes"; fi
+
+connId=`echo $connRes | jq -r '.id'`
+echo $connId

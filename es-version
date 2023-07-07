@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+versionRes=`curl -s $ES_URL`
+versionLong=`echo $versionRes | jq -r .version.number`
+# split -SNAPSHOT from the end, if it's there
+IFS='-' read -ra version <<< "$versionLong"
+echo ${version[0]}

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+getLabel() {
+  $script_dir/ut-label
+}
+
+errorExit() {
+  echo "$command ERROR: $1"
+  exit 1
+}
+
+# if KB_URL and ES_URL are not set, exit with an error message
+if [ -z "$KB_URL" ]; then errorExit "ERROR: KB_URL is not set"; exit 1; fi
+if [ -z "$ES_URL" ]; then errorExit "ERROR: ES_URL is not set"; exit 1; fi
+

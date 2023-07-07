@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $script_dir/ut-common
+command=$0
+
+# create an alias for the event log that metric threshold can see
+aliasRes=`curl -sX POST $ES_URL/.kibana-event-log-*/_alias/metrics-event-log \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d '{ "is_hidden": true }'`
+echo "creating alias result:" $aliasRes
+
+ruleParams=`hjson -c << END_PARAMS
+{
+  criteria: [
+    {
+      metric:     kibana.alert.rule.execution.metrics.rule_type_run_duration_ms
+      comparator: >
+      threshold:  [ 1 ]
+      timeSize:   1
+      timeUnit:   m
+      aggType:    avg
+    }
+  ]
+  sourceId:              default
+  alertOnNoData:         false
+  alertOnGroupDisappear: false
+  groupBy:               [ "rule.id" ]
+}
+END_PARAMS`
+
+ruleId=`$script_dir/kb-create-rule metrics.alert.threshold "$ruleParams"`
+if [ $? -ne 0 ]; then errorExit "error creating rule: $ruleRes"; fi
+echo "created rule $ruleId"

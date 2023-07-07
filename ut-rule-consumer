@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $script_dir/ut-common
+
+ret() { echo "$1"; exit 0; }
+
+type=$1
+if [ -z "$type" ]; then errorExit "no rule type parameter provided"; fi
+
+# info available from GET /_security/role, but is that producers?
+
+case $type in 
+  metrics.alert.threshold)                         ret "infrastructure";;
+  metrics.alert.inventory.threshold)               ret "infrastructure";;
+  apm.transaction_error_rate)                      ret "apm";;
+  apm.transaction_duration)                        ret "apm";;
+  apm.anomaly)                                     ret "apm";;
+  apm.error_rate)                                  ret "apm";;
+  xpack.ml.anomaly_detection_alert)                ret "ml";;
+  xpack.ml.anomaly_detection_jobs_health)          ret "ml";;
+  logs.alert.document.count)                       ret "logs";;
+  xpack.uptime.alerts.tls)                         ret "uptime";;
+  xpack.uptime.alerts.tlsCertificate)              ret "uptime";;
+  xpack.uptime.alerts.monitorStatus)               ret "uptime";;
+  xpack.uptime.alerts.durationAnomaly)             ret "uptime";;
+  xpack.synthetics.alerts.monitorStatus)           ret "uptime";;
+  xpack.synthetics.alerts.tls)                     ret "uptime";;
+  siem.notifications)                              ret "siem";;               
+  siem.eqlRule)                                    ret "siem";;
+  siem.indicatorRule)                              ret "siem";;
+  siem.mlRule)                                     ret "siem";;
+  siem.queryRule)                                  ret "siem";;
+  siem.savedQueryRule)                             ret "siem";;
+  siem.thresholdRule)                              ret "siem";;
+  siem.newTermsRule)                               ret "siem";;
+  slo.rules.burnRate)                              ret "slo";;
+  .index-threshold)                                ret "stackAlerts";;
+  .geo-containment)                                ret "stackAlerts";;
+  .es-query)                                       ret "stackAlerts";;
+  transform_health)                                ret "stackAlerts";;
+  monitoring_alert_license_expiration)             ret "monitoring";;
+  monitoring_alert_cluster_health)                 ret "monitoring";;
+  monitoring_alert_cpu_usage)                      ret "monitoring";;
+  monitoring_alert_disk_usage)                     ret "monitoring";;
+  monitoring_alert_nodes_changed)                  ret "monitoring";;
+  monitoring_alert_elasticsearch_version_mismatch) ret "monitoring";;
+  monitoring_alert_kibana_version_mismatch)        ret "monitoring";;
+  monitoring_alert_logstash_version_mismatch)      ret "monitoring";;
+  monitoring_alert_jvm_memory_usage)               ret "monitoring";;
+  monitoring_alert_missing_monitoring_data)        ret "monitoring";;
+  monitoring_alert_thread_pool_search_rejections)  ret "monitoring";;
+  monitoring_alert_thread_pool_write_rejections)   ret "monitoring";;
+  monitoring_ccr_read_exceptions)                  ret "monitoring";;
+  monitoring_shard_size)                           ret "monitoring";;
+esac
+
+ret "alerting"

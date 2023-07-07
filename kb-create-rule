@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $script_dir/ut-common
+command=$0
+label=`getLabel`
+
+help() {
+  echo "Usage: $command <type> <params>" 
+  echo "  - type should be a valid connector type"
+  echo "  - params should be a valid HJSON or JSON value"
+  exit 1
+}
+
+type=$1
+params_hjson=$2
+
+if [ -z "$type" ]; then help; fi
+if [ -z "$params_hjson" ]; then help; fi
+
+consumer=`$script_dir/ut-rule-consumer $type`
+if [ $? -ne 0 ]; then errorExit "unable to determine consumer"; fi
+
+echo ----
+echo $params_hjson
+echo ----
+params=`echo $params_hjson | hjson -c`
+if [ $? -ne 0 ]; then errorExit "invalid params"; fi
+
+body=`hjson -c << END_BODY
+{
+  name:         "$label $type"
+  rule_type_id: "$type"
+  consumer:     "$consumer"
+  enabled:      true
+  throttle:     null
+  schedule:     { interval: "1s" }
+  actions:      []
+  params:       $params
+}
+END_BODY`
+
+ruleRes=`curl -sfX POST $KB_URL/api/alerting/rule \
+  -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d "$body"`
+if [ $? -ne 0 ]; then errorExit "error creating rule: $connRes"; fi
+ruleId=`echo "$ruleRes" | jq -r '.id'`
+echo $ruleId

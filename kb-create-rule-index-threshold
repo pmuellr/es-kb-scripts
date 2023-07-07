@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $script_dir/ut-common
+command=$0
+
+ruleParams=`hjson -c << END_PARAMS
+{
+  index:               [ ".kibana-event-log-*" ]
+  timeField:           @timestamp
+  aggType:             avg
+  aggField:            kibana.alert.rule.execution.metrics.rule_type_run_duration_ms
+  groupBy:             top
+  termSize:            100
+  termField:           rule.id
+  timeWindowSize:      1
+  timeWindowUnit:      m 
+  thresholdComparator: ">"
+  threshold:           [ 1 ]
+}
+END_PARAMS`
+
+ruleId=`$script_dir/kb-create-rule .index-threshold "$ruleParams"`
+if [ $? -ne 0 ]; then errorExit "error creating rule: $ruleRes"; fi
+echo "created rule $ruleId"
