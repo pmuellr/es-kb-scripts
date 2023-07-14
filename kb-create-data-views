@@ -22,7 +22,7 @@ END_BODY`
     -H 'kbn-xsrf: true' \
     -H 'Content-Type: application/json' \
     -d "$body"`
-  if [ $? -ne 0 ]; then errorExit "error creating data view: $res"; fi
+  if [ $? -ne 0 ]; then echo "error creating data view: $res"; fi
 }
 
 addDataView ".kibana"
@@ -30,3 +30,4 @@ addDataView ".kibana_task_manager"
 addDataView ".kibana_alerting_cases"
 addDataView ".kibana_analytics"
 addDataView ".kibana-event-log-*"
+addDataView ".alerts-observability.metrics.alerts-default"
