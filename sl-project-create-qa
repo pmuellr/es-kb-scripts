@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+ES_CLOUD_API_GATEWAY="https://global.qa.cld.elstc.co"
+
+help() {
+  echo "Usage: $command <flavor> <slug> <docker-image>" 
+  echo "- flavor should be one of es (elasticsearch), se (security), or ob (observability)"
+  echo "- slug should be the base name of the project"
+  echo "- docker-image should be the Kibana docker image to use"
+  echo "- the env var ES_CLOUD_API_KEY_QA should be set to an org API Key"
+  exit 1
+}
+
+command=$0
+flavor=$1
+slug=$2
+docker=$3
+
+if [ -z "$flavor" ]; then help; fi
+if [ -z "$slug" ]; then help; fi
+if [ -z "$docker" ]; then help; fi
+
+if [ -z "$ES_CLOUD_API_KEY_QA" ]; then 
+  echo "env var ES_CLOUD_API_KEY_QA is not set"
+  exit 1
+fi
+
+if [[ $flavor == "es" ]]
+then 
+  longFlavor="elasticsearch"
+elif [[ $flavor == "se" ]]
+then
+  longFlavor="security"
+elif [[ $flavor == "ob" ]]
+then
+  longFlavor="observability"
+else
+  echo "invalid flavor '${flavor}'; flavor must be one of es, se, or ob"
+  exit 1
+fi
+
+# if $flavor == "es" then echo "you win"
+longFlavor=""
+if [[ $flavor == "es" ]]; then longFlavor="elasticsearch"; fi
+if [[ $flavor == "se" ]]; then longFlavor="security"; fi
+if [[ $flavor == "ob" ]]; then longFlavor="observability"; fi
+
+name="${USER}-${slug}-${flavor}"
+
+projectBody=`hjson -c << END_BODY
+  name: "${name}"
+  region_id: aws-eu-west-1
+  overrides: {
+    kibana: {
+      docker_image: "${docker}"
+    }
+  }  
+END_BODY`
+
+projectUrl="${ES_CLOUD_API_GATEWAY}/api/v1/serverless/projects/${longFlavor}"
+
+res=`curl -X POST "${projectUrl}" \
+  -H "Authorization: ApiKey $ES_CLOUD_API_KEY_QA" \
+  -H "Content-Type: application/json" \
+  -d "${projectBody}"
+`
+echo $res | json

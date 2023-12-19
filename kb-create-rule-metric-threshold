@@ -31,5 +31,5 @@ ruleParams=`hjson -c << END_PARAMS
 END_PARAMS`
 
 ruleId=`$script_dir/kb-create-rule metrics.alert.threshold "$ruleParams"`
-if [ $? -ne 0 ]; then errorExit "error creating rule: $ruleRes"; fi
+if [ $? -ne 0 ]; then errorExit "error creating metric threshold rule: $ruleId"; fi
 echo "created rule $ruleId"

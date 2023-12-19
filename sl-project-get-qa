@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+ES_CLOUD_API_GATEWAY="https://global.qa.cld.elstc.co"
+
+help() {
+  echo "Usage: $command <flavor> <project-id>" 
+  echo "- flavor should be one of es (elasticsearch), se (security), or ob (observability)"
+  echo "- project-id should be the id of the project"
+  echo "- the env var ES_CLOUD_API_KEY_QA should be set to an org API Key"
+  exit 1
+}
+
+command=$0
+flavor=$1
+projectId=$2
+
+if [ -z "$flavor" ]; then help; fi
+if [ -z "$projectId" ]; then help; fi
+
+if [ -z "$ES_CLOUD_API_KEY_QA" ]; then 
+  echo "env var ES_CLOUD_API_KEY_QA is not set"
+  exit 1
+fi
+
+if [[ $flavor == "es" ]]
+then 
+  longFlavor="elasticsearch"
+elif [[ $flavor == "se" ]]
+then
+  longFlavor="security"
+elif [[ $flavor == "ob" ]]
+then
+  longFlavor="observability"
+else
+  echo "invalid flavor '${flavor}'; flavor must be one of es, se, or ob"
+  exit 1
+fi
+
+projectUrl="${ES_CLOUD_API_GATEWAY}/api/v1/serverless/projects/${longFlavor}"
+
+res=`curl -s "${projectUrl}/${projectId}" \
+  -H "Authorization: ApiKey $ES_CLOUD_API_KEY_QA"
+`
+
+echo $res | json

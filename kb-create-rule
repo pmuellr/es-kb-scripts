@@ -5,6 +5,8 @@ source $script_dir/ut-common
 command=$0
 label=`getLabel`
 
+interval="${RULE_INTERVAL:-1m}"
+
 help() {
   echo "Usage: $command <type> <params>" 
   echo "  - type should be a valid connector type"
@@ -21,9 +23,6 @@ if [ -z "$params_hjson" ]; then help; fi
 consumer=`$script_dir/ut-rule-consumer $type`
 if [ $? -ne 0 ]; then errorExit "unable to determine consumer"; fi
 
-echo ----
-echo $params_hjson
-echo ----
 params=`echo $params_hjson | hjson -c`
 if [ $? -ne 0 ]; then errorExit "invalid params"; fi
 
@@ -34,7 +33,7 @@ body=`hjson -c << END_BODY
   consumer:     "$consumer"
   enabled:      true
   throttle:     null
-  schedule:     { interval: "1s" }
+  schedule:     { interval: "$interval" }
   actions:      []
   params:       $params
 }
@@ -44,6 +43,7 @@ ruleRes=`curl -sfX POST $KB_URL/api/alerting/rule \
   -H 'kbn-xsrf: true' \
   -H 'Content-Type: application/json' \
   -d "$body"`
-if [ $? -ne 0 ]; then errorExit "error creating rule: $connRes"; fi
+
+if [ $? -ne 0 ]; then errorExit "error creating rule: $ruleRes"; fi
 ruleId=`echo "$ruleRes" | jq -r '.id'`
 echo $ruleId

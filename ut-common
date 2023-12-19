@@ -11,6 +11,10 @@ errorExit() {
   exit 1
 }
 
+debugLog() {
+  echo "debug: $*" 1>&2
+}
+
 # if KB_URL and ES_URL are not set, exit with an error message
 if [ -z "$KB_URL" ]; then errorExit "ERROR: KB_URL is not set"; exit 1; fi
 if [ -z "$ES_URL" ]; then errorExit "ERROR: ES_URL is not set"; exit 1; fi
