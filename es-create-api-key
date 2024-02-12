@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+curl -X POST $ES_URL/_security/api_key \
+    --silent \
+    -H "content-type: application/json" \
+    -d '{"name": "from es-create-api-key"}' \
+| jq --raw-output ". | .encoded"
