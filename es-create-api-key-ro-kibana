@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+cat << EOF
+# Run from Dev Tools.
+# Creates a Kibana-capable, index-viewable, read-only API key.
+
+POST /_security/api_key
+{
+  "name": "$USER-ro-kibana-$(date '+%Y-%m-%d')",
+  "expiration": "90d",   
+  "role_descriptors": {
+    "read-only-with-kibana": {
+      "cluster": [ "read_ccr", "read_ilm", "read_slm", "cross_cluster_search" ],
+      "indices": [
+        {
+          "names": [ "*" ],
+          "privileges": [ "read", "read_cross_cluster", "view_index_metadata" ],
+          "field_security": { "grant": [ "*" ], "except": [] },
+          "allow_restricted_indices": true
+        }
+      ],
+      "remote_indices": [
+        {
+          "names": [ "*" ],
+          "privileges": [ "read", "read_cross_cluster", "view_index_metadata" ],
+          "field_security": { "grant": [ "*" ] },
+          "allow_restricted_indices": true,
+          "clusters": [ "*" ]
+        }
+      ],
+      "applications": [
+        {
+          "application": "kibana-.kibana",
+          "privileges": [ "read" ],
+          "resources": [ "*" ]
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "app": "$(basename $0)",
+    "date": "$(date)"
+  }
+}
+EOF
+
+# get name of this script
+script_name=$(basename $0)
